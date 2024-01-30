@@ -74,19 +74,30 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       _showSpinner=true;
                     });
                     try {
-                      final newUser =
-                          await _auth.createUserWithEmailAndPassword(
-                              email: email, password: password);
-                      if (newUser != null) {
-                        Navigator.pushNamed(context, ChatScreen.id);
-                      }
-                      setState(() {
-                        _showSpinner=false;
+                      await Future.delayed(Duration(seconds: 2), () async {
+                        final newUser = await _auth
+                            .createUserWithEmailAndPassword(
+                            email: email, password: password);
+                        if (newUser != null) {
+                          // Add a delay before navigating to the next screen
+                          await Future.delayed(Duration(seconds: 2), () {
+                            Navigator.pushNamed(context, ChatScreen.id);
+                          });
+                        }
+
+                        setState(() {
+                          _showSpinner = false;
+                        });
                       });
                     } catch (e) {
                       print(e);
+
+                      setState(() {
+                        _showSpinner = false;
+                      });
                     }
-                  }),
+                  },
+              ),
             ],
           ),
         ),

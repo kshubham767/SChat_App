@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:s_chat/constants.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
 final _firestore = FirebaseFirestore.instance;
 late User loggedInUser;
@@ -79,6 +80,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       _firestore.collection('message').add({
                         'text': messageText,
                         'sender': loggedInUser.email,
+                        'time': DateTime.now(),
                       });
                     },
                     child: Text(
@@ -122,12 +124,15 @@ class MessagesStream extends StatelessWidget {
               if (data != null) {
                 final messageText = data['text'];
                 final messageSender = data['sender'];
+                final messageTime = data['time'];
                 final currentUser = loggedInUser.email;
                 final messageBubble = MessageBubble(
                     sender: messageSender,
                     text: messageText,
-                    isMe: currentUser == messageSender);
+                    isMe: currentUser == messageSender,
+                    time:messageTime);
                 messageBubbles.add(messageBubble);
+                messageBubbles.sort((a , b ) => b.time.compareTo(a.time));
               }
             }
           }
@@ -143,20 +148,31 @@ class MessagesStream extends StatelessWidget {
 }
 
 class MessageBubble extends StatelessWidget {
-  const MessageBubble(
-      {required this.sender, required this.text, required this.isMe});
+  const MessageBubble({
+    required this.sender,
+    required this.text,
+    required this.isMe,
+    required this.time,
+  });
+
   final String sender;
   final String text;
   final bool isMe;
+  final Timestamp time;
+
   @override
   Widget build(BuildContext context) {
+    // Format the timestamp to a readable string
+    String formattedTime = DateFormat.yMd().add_jm().format(time.toDate());
+
     return Padding(
       padding: EdgeInsets.all(10.0),
       child: Column(
-        crossAxisAlignment: isMe?CrossAxisAlignment.end:CrossAxisAlignment.start,
+        crossAxisAlignment:
+        isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           Text(
-            sender,
+            '$sender - $formattedTime',
             style: TextStyle(
               fontSize: 12.0,
               color: Colors.black54,
@@ -165,20 +181,20 @@ class MessageBubble extends StatelessWidget {
           Material(
             elevation: 5.0,
             borderRadius: BorderRadius.only(
-              topLeft: isMe?Radius.circular(30):Radius.zero,
+              topLeft: isMe ? Radius.circular(30) : Radius.zero,
               bottomLeft: Radius.circular(30),
               bottomRight: Radius.circular(30),
-              topRight: isMe?Radius.zero:Radius.circular(30),
+              topRight: isMe ? Radius.zero : Radius.circular(30),
             ),
-            color: isMe?Colors.lightBlueAccent:Colors.white,
+            color: isMe ? Colors.lightBlueAccent : Colors.white,
             child: Padding(
               padding:
-                  const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+              const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
               child: Text(
                 text,
                 style: TextStyle(
                   fontSize: 15.0,
-                  color: isMe?Colors.white:Colors.black54,
+                  color: isMe ? Colors.white : Colors.black54,
                 ),
               ),
             ),
